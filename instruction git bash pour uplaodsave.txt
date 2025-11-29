@@ -1,0 +1,8 @@
+se mettre dans projet multi et ouvrir git bash
+//après avoir travaillé
+git add .
+git commit -m "petit commentaire"
+git push origin main //ou la branche du GitHub ou on veut s'enregistrer
+
+//avant de travailler
+git pull
