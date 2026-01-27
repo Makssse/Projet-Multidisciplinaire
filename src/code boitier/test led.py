@@ -3,11 +3,11 @@ import time
 from Led import *
 
 # --- CONFIGURATION ---
-NUM_LEDS = 10         # Nombre de LEDs sur ta bande
+NUM_LEDS = 6         # Nombre de LEDs sur ta bande
 PIN_DATA = 18        #green (data)
 PIN_CLOCK = 19        #blue (clok)
 #gnd : yellow ; vcc : red
-BRIGHTNESS = 0.3      # Luminosité (0.1 à 1.0) - Attention aux yeux !
+BRIGHTNESS = 0.8    # Luminosité (0.1 à 1.0) - Attention aux yeux !
 
 # Initialisation
 strip = DotStar(PIN_DATA, PIN_CLOCK, NUM_LEDS, BRIGHTNESS)
