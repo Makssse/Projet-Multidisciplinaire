@@ -323,7 +323,7 @@ class SCD4X:
                 raise RuntimeError("CRC check failed while reading data")
         return True
 
-    def _send_command(self, cmd: int, cmd_delay: float = 0) -> None:
+    def _send_command(self, cmd: int, cmd_delay: float = 0.5) -> None:
         self._cmd[0] = (cmd >> 8) & 0xFF
         self._cmd[1] = cmd & 0xFF
 

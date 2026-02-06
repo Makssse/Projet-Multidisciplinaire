@@ -1,16 +1,26 @@
 from machine import Pin,ADC, I2C, SoftI2C
 import time
+from lib_scd4x import *
+from lib_led import *
 
-led = Pin(25, Pin.OUT) #la pin 25 est appellé led et est en mode OUT
+# - - - Parametres SCD40 - - - #
+CO2_sda = 6
+CO2_scl = 7 
+CO2_port = 1
+CO2_ppm = 400
+scd = config_port_scd(CO2_sda,CO2_scl,CO2_port)
 
-capteur_son = ADC(26) #le port A0 du shield est en analog INPUT et s'appelle capteur_son
+# - - - Parametres LEDs - - - #
+strip = config_led()
 
+
+
+# - - - Code continu - - - #
+scd.start_periodic_measurement()
+
+time.sleep(8)
 while True:
-    value = capteur_son.read_u16()   # on lit une valeur entre 0 et 65535 pour capteur_son
-    print("Niveau sonore :", value)
-    time.sleep(1)
+    CO2_ppm = obtenir_donnees(scd)
+    indicateur_visuel(CO2_ppm, strip)
 
-    led.on() #or led.value(1)
-    time.sleep(1) 
-    led.off()
-    time.sleep(1)
+
