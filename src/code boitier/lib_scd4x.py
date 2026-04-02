@@ -25,7 +25,7 @@ def obtenir_donnees(capteur):
         print(relative_humidity)
         co2_ppm_level = capteur.CO2
         print(co2_ppm_level)
-        return co2_ppm_level
+        return co2_ppm_level,temperature,relative_humidity
 
 
 
