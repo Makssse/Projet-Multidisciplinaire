@@ -11,8 +11,8 @@ from lib_mqtt import MQTTClient, connecter_ethernet
 
 # --- CONFIGURATION ---
 SALLE_ID = "salle1"
-IP_PICO = "192.168.1.101"
-BROKER_IP = "192.168.1.100"
+IP_PICO = "10.40.1.22"
+BROKER_IP = "10.40.1.20"
 INTERVALLE_MQTT = 600  # 10 minutes
 
 # Variables globales pour partager les données entre les tâches

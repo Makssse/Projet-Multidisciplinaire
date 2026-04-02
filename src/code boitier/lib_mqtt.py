@@ -50,16 +50,32 @@ class MQTTClient:
             return False
 
 def connecter_ethernet(ip, mac_str):
-    # Pins SPI standards pour W5500-EVB-Pico selon votre config
-    spi = SPI(1, baudrate=20_000_000, mosi=Pin(11), miso=Pin(12), sck=Pin(10))
-    rst = Pin(15, Pin.OUT)
+    # --- CONFIGURATION CORRIGÉE POUR W5500-EVB-PICO ---
+    # On utilise SPI(0) car les pins 16, 17, 18, 19 appartiennent au bus 0
+    spi = SPI(0, baudrate=20_000_000, mosi=Pin(19), miso=Pin(16), sck=Pin(18))
+
+    # Le Reset est souvent sur GP20 sur ces cartes
+    rst = Pin(20, Pin.OUT)
     rst.value(0)
     time.sleep_ms(100)
     rst.value(1)
     time.sleep_ms(200)
-    nic = network.WIZNET5K(spi, Pin(13), Pin(14)) # CS=13, INT=14
+
+    # Initialisation du contrôleur (CS=17)
+    nic = network.WIZNET5K(spi, Pin(17), Pin(20)) # CS=17
+    '''
+        # Pins SPI standards pour W5500-EVB-Pico selon votre config
+        spi = SPI(1, baudrate=20_000_000, mosi=Pin(11), miso=Pin(12), sck=Pin(10))
+        rst = Pin(15, Pin.OUT)
+        rst.value(0)
+        time.sleep_ms(100)
+        rst.value(1)
+        time.sleep_ms(200)
+        nic = network.WIZNET5K(spi, Pin(13), Pin(14)) # CS=13, INT=14
+    '''
     nic.active(True)
-    nic.ifconfig((ip, "255.255.255.0", "192.168.1.1", "192.168.1.1"))
+    nic.ifconfig((ip, "255.255.255.0", "10.40.1.1", "10.40.1.1"))
+    #nic.ifconfig((ip, "255.255.255.0", "192.168.1.1", "192.168.1.1"))
     while not nic.isconnected():
         time.sleep_ms(500)
     return nic
