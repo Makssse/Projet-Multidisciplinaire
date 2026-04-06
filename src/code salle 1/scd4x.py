@@ -95,9 +95,10 @@ class SCD4X:
     """
 
     def __init__(self, i2c_bus: I2C, address: int = SCD4X_DEFAULT_ADDR) -> None:
-        print("__init__ :", dir())
-        print("address : %x" % address)
-        print("i2c_bus : ", i2c_bus)
+        #print("__init__ :", dir())
+        #print("address : %x" % address)
+        #print("i2c_bus : ", i2c_bus)
+        print("INITIALISATION I2C OK")
         self.address = address
         print(i2c_bus)
         self.i2c_device = i2c_bus

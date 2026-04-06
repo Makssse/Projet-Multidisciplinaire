@@ -12,10 +12,17 @@ def indicateur_visuel(CO2_ppm,bandeau, SEUIL_CO2_OK, SEUIL_CO2_ALERTE):
         bandeau.fill(0,255,0)
     
     if SEUIL_CO2_OK<=CO2_ppm<=SEUIL_CO2_ALERTE:
-        bandeau.fill(255,127,0) 
+        bandeau.fill(255,100,0) 
 
     if CO2_ppm>SEUIL_CO2_ALERTE:
         bandeau.fill(255,0,0)
+
+def piloter_led(etat, bandeau):
+    if etat == 1:
+        bandeau.fill(255,255,255)
+    if etat == 0:
+        bandeau.fill(0,0,0)
+
 
 
 
