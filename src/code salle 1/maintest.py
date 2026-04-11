@@ -21,7 +21,7 @@ from lib_mqtt import *
 from lib_son import config_port_son, niveau_sonore
 from lib_IP_MAC import connect_ethernet
 
-SALLE_ID = "salle1" # A CHANGER SELON PICO c'est la seule ligne à changer exemple : salle2
+SALLE_ID = "salle1" # A CHANGER SELON PICO c'est la seule ligne à changer avc IP_BROKR
 
 #on récupère l'IP et l'adresse MAC de la pico 
 mac_pico, ip_pico = connect_ethernet()
@@ -34,7 +34,7 @@ systeme_actif = True  # Le système démarre "Allumé" par défaut
 # --- CONFIGURATION MQTT
 IP_PICO = ip_pico  
 MAC_PICO = mac_pico 
-BROKER_IP = "10.40.1.20"
+BROKER_IP = "10.40.1.20" #a changer selon le réseau
 MQTT_USER = "reseau_co2"      # Minuscule comme dans ton test
 MQTT_PASS = "co2_saintpaul"  # Ton mot de passe qui fonctionne
 INTERVALLE_MQTT = 5         # Envoi toutes les 10 secondes sur HA pour commencer
@@ -55,6 +55,9 @@ BRIGHTNESS = 0.1    # Luminosité (0.1 à 1.0)
 #pour le capteur de son
 PIN_SON = 26
 
+#altitude du capteur
+ALTITUDE = 0
+
 
 # Variables globales pour partager les données entre les tâches
 donnees_actuelles = {"co2": 0, "temp": 0, "humi": 0, "bruit": 0}
@@ -68,17 +71,34 @@ def reception_message(topic, msg):
     else:
         ordre = str(msg).strip()
         
-    print(f"📩 Ordre reçu : [{ordre}] sur le topic [{topic}]")
+    print(f" Ordre reçu : [{ordre}] sur le topic [{topic}]")
 
-    if "OFF" in ordre:
+    if ordre == "OFF":
         systeme_actif = False
-        print("💤 Système mis en PAUSE")
-    elif "ON" in ordre:
+        print(" Système mis en PAUSE")
+    elif ordre == "ON":
         systeme_actif = True
-        print("🚀 Système RÉVEILLÉ")
-    elif "recalibrer" in ordre:
-        #recalibration(scd, CIBLE_CALIBRATION_CO2)
-        return 0
+        print(" Système RÉVEILLÉ")
+
+    elif ordre.startswith("OFFSET:"):
+        try:
+            systeme_actif = False
+            valeur = float(ordre.split(":")[1])
+            print(f"🌡️ Application du nouvel Offset : {valeur}°C")
+            change_parametres(scd, valeur, ALTITUDE)
+            systeme_actif = True
+        except Exception as e:
+            print("Erreur lors de l'application de l'offset:", e)
+            
+    elif ordre.startswith("CALIBRER:"):
+        try:
+            systeme_actif = False
+            valeur = int(float(ordre.split(":")[1]))
+            print(f"🌡️ calibration forcé à : {valeur}ppm")
+            recalibration(scd, valeur)
+            systeme_actif = True
+        except Exception as e:
+            print("Erreur lors de la calibration:", e)
 
 
 
@@ -121,7 +141,7 @@ async def tache_mqtt(mqtt, wdt):
                 mqtt.check_msg()
                 
                 # 4. On n'envoie les stats que si le système est actif
-                if systeme_actif:
+                if systeme_actif and donnees_actuelles["co2"] > 0:
                     payload = ujson.dumps(donnees_actuelles)
                     mqtt.publier(f"ecole/{SALLE_ID}/state", payload) #
                     print(f"Données envoyées : {payload}")
@@ -134,6 +154,7 @@ async def tache_mqtt(mqtt, wdt):
             await asyncio.sleep(1)
 
 async def main():
+    global scd
     # 1. Matériel et Sécurité
     wdt = WDT(timeout=8000) # Si le code freeze plus de 8s, la Pico reboot
 

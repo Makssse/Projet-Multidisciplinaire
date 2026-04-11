@@ -100,7 +100,7 @@ class SCD4X:
         #print("i2c_bus : ", i2c_bus)
         print("INITIALISATION I2C OK")
         self.address = address
-        print(i2c_bus)
+        #print(i2c_bus)
         self.i2c_device = i2c_bus
         self._buffer = bytearray(18)
         self._cmd = bytearray(2)

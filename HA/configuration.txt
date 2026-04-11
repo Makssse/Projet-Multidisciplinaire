@@ -1,0 +1,235 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+mqtt:
+  sensor:
+    #sensor pour la salle 1
+    - name: "CO2 Salle 1"
+      unique_id: "pico_salle1_co2"
+      state_topic: "ecole/salle1/state"
+      value_template: "{{ value_json.co2 }}"
+      unit_of_measurement: "ppm"
+      device_class: "carbon_dioxide"
+      state_class: "measurement"
+      availability_topic: "ecole/salle1/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+    - name: "Température Salle 1"
+      unique_id: "pico_salle1_temp"
+      state_topic: "ecole/salle1/state"
+      value_template: "{{ value_json.temp }}"
+      unit_of_measurement: "°C"
+      device_class: "temperature"
+      state_class: "measurement"
+      availability_topic: "ecole/salle1/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+    - name: "Bruit Salle 1"
+      unique_id: "pico_salle1_bruit"
+      state_topic: "ecole/salle1/state"
+      value_template: "{{ value_json.bruit }}"
+      unit_of_measurement: "pts"
+      state_class: "measurement"
+      availability_topic: "ecole/salle1/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+    - name: "Humidité Salle 1"
+      unique_id: "pico_salle1_humi"
+      state_topic: "ecole/salle1/state"
+      value_template: "{{ value_json.humi }}"
+      unit_of_measurement: "%"
+      device_class: "humidity"
+      state_class: "measurement"
+      availability_topic: "ecole/salle1/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+      #sensor pour la salle 2
+    - name: "CO2 Salle 2"
+      unique_id: "pico_salle2_co2"
+      state_topic: "ecole/salle2/state"
+      value_template: "{{ value_json.co2 }}"
+      unit_of_measurement: "ppm"
+      device_class: "carbon_dioxide"
+      state_class: "measurement"
+      availability_topic: "ecole/salle2/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+    - name: "Température Salle 2"
+      unique_id: "pico_salle2_temp"
+      state_topic: "ecole/salle2/state"
+      value_template: "{{ value_json.temp }}"
+      unit_of_measurement: "°C"
+      device_class: "temperature"
+      state_class: "measurement"
+      availability_topic: "ecole/salle2/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+    - name: "Bruit Salle 2"
+      unique_id: "pico_salle2_bruit"
+      state_topic: "ecole/salle2/state"
+      value_template: "{{ value_json.bruit }}"
+      unit_of_measurement: "pts"
+      state_class: "measurement"
+      availability_topic: "ecole/salle2/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+    - name: "Humidité Salle 2"
+      unique_id: "pico_salle2_humi"
+      state_topic: "ecole/salle2/state"
+      value_template: "{{ value_json.humi }}"
+      unit_of_measurement: "%"
+      device_class: "humidity"
+      state_class: "measurement"
+      availability_topic: "ecole/salle2/availability"
+      payload_available: "online"
+      payload_not_available: "offline"
+
+  switch:
+    #interrupteur locale pour chaque salle
+    - name: "Activation Salle 1"
+      unique_id: "pico_salle1_activation"
+      state_topic: "ecole/salle1/status"
+      command_topic: "ecole/salle1/set_status"
+      payload_on: "ON"
+      payload_off: "OFF"
+      optimistic: true
+      retain: true
+
+    - name: "Activation Salle 2"
+      unique_id: "pico_salle2_activation"
+      state_topic: "ecole/salle2/status"
+      command_topic: "ecole/salle2/set_status"
+      payload_on: "ON"
+      payload_off: "OFF"
+      optimistic: true
+      retain: true
+
+#box pour taper rentrer les offset et les taux de CO2 pour la calibration (il faut également completer le script)
+#il y a à la finles boxs pour l'indice ICONE
+#pour l'offset : rajouter pour chaque salle
+input_number:
+  offset_temperature_salle1:
+    name: "Ajustement température (Offset) Salle 1"
+    min: -10
+    max: 10
+    step: 0.1
+    mode: box
+    unit_of_measurement: "°C"
+    icon: mid:thermometr-minus
+
+  offset_temperature_salle2:
+    name: "Ajustement température (Offset) Salle 2"
+    min: -10
+    max: 10
+    step: 0.1
+    mode: box
+    unit_of_measurement: "°C"
+    icon: mid:thermometr-minus
+
+  #pour la calibration CO2 : rajouter pour chaque salle
+  valeur_calibration_salle1:
+    name: "Cible de calibration CO2 Salle 1"
+    min: 300
+    max: 2000
+    step: 1
+    mode: box
+    unit_of_measurement: "ppm"
+    icon: mid:form-textbox
+
+  valeur_calibration_salle2:
+    name: "Cible de calibration CO2 Salle 2"
+    min: 300
+    max: 2000
+    step: 1
+    mode: box
+    unit_of_measurement: "ppm"
+    icon: mid:form-textbox
+
+  #pour le temps sur lequel on calcule l'indice ICONE
+  duree_icone_salle1:
+    name: "Durée ICONE Salle 1"
+    min: 0.1
+    max: 30
+    step: 0.1
+    mode: box
+    unit_of_measurement: "j"
+    icon: mid:form-textbox
+
+    #calcule de l'indice ICONE pour chaque salle
+template:
+  - sensor:
+      #le trieur qui répartie dans les 3 catégories n0, n1, n2
+      - name: "Chrono CO2 salle1"
+        unique_id: chrono_co2_salle1
+        state: >
+          {% set co2 = states('sensor.pico_salle1_co2') | float(-1) %}
+          {% if co2 == 0 %}
+            inconnu
+          {% elif co2 <= 800 %}
+            n0
+          {% elif co2 <= 1500 %}
+            n1
+          {% else %}
+            n2
+          {% endif %}
+
+
+      - name: "Indice ICONE Salle1"
+        unit_of_measurement: "Niveau"
+        state: >
+          {% set t0 = states('sensor.temps_n0_personnalise') | float(0) %}
+          {% set t1 = states('sensor.temps_n1_personnalise') | float(0) %}
+          {% set t2 = states('sensor.temps_n2_personnalise') | float(0) %}
+          {% set total = t0 + t1 + t2 %}
+
+          {% if total > 0 %}
+            {% set f1 = t1 / total %}
+            {% set f2 = t2 / total %}
+            {% set icone = 8.3 * log(1 + f1 + 3 * f2, 10) %}
+            {{ icone | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+
+#on met ici les sensors pour les temps dans les différentes plages de l'indice ICONE
+sensor:
+  # --- CHRONOMÈTRES SUR MESURE (En Jours) ---
+  - platform: history_stats
+    name: "Temps n0 Salle 1"
+    entity_id: sensor.chrono_co2_salle1
+    state: "n0"
+    type: time
+    end: "{{ now() }}"
+    # On recule de X jours en lisant la valeur de la box
+    start: "{{ now() - timedelta(days=states('input_number.duree_icone_salle1') | float(7)) }}"
+
+  - platform: history_stats
+    name: "Temps n1 Salle 1"
+    entity_id: sensor.chrono_co2_salle1
+    state: "n1"
+    type: time
+    end: "{{ now() }}"
+    start: "{{ now() - timedelta(days=states('input_number.duree_icone_salle1') | float(7)) }}"
+
+  - platform: history_stats
+    name: "Temps n2 Salle 2"
+    entity_id: sensor.chrono_co2_salle1
+    state: "n2"
+    type: time
+    end: "{{ now() }}"
+    start: "{{ now() - timedelta(days=states('input_number.duree_icone_salle1') | float(7)) }}"

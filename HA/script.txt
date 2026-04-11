@@ -1,0 +1,39 @@
+#Scripts pour les offset et la calibration
+#Les bonton pour envoyer l'offset de température 
+envoyer_offset_salle1:
+    alias: "Appliquer le nouvel Offset Salle 1"
+    icon: mid:send
+    sequence:
+      - service: mqtt.publish
+        data:
+          topic: "ecole/salle1/set_status"
+          payload: "OFFSET:{{ states('input_number.offset_temperature_salle1') | float}}"
+
+envoyer_offset_salle2:
+    alias: "Appliquer le nouvel Offset Salle 2"
+    icon: mid:send
+    sequence:
+      - service: mqtt.publish
+        data:
+          topic: "ecole/salle2/set_status"
+          payload: "OFFSET:{{ states('input_number.offset_temperature_salle2') | float}}"
+
+
+#Les bonton pour envoyer le CO2 à calibrer 
+envoyer_calibration_salle1:
+    alias: "Envoyer l'ordre de calibration Salle 1"
+    icon: mid:send
+    sequence:
+      - service: mqtt.publish
+        data:
+          topic: "ecole/salle1/set_status"
+          payload: "CALIBRER:{{ states('input_number.valeur_calibration_salle1') | int}}"
+
+envoyer_calibration_salle2:
+    alias: "Envoyer l'ordre de calibration Salle 2"
+    icon: mid:send
+    sequence:
+      - service: mqtt.publish
+        data:
+          topic: "ecole/salle2/set_status"
+          payload: "CALIBRER:{{ states('input_number.valeur_calibration_salle2') | int}}"

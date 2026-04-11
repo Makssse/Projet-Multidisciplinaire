@@ -1,0 +1,39 @@
+- id: '1775487719289'
+  alias: ON/OFF_matin/soir_ecole_generale
+  description: ''
+  triggers:
+  - trigger: time
+    at: '07:00:00'
+    id: matin
+  - trigger: time
+    at: '18:00:00'
+    id: soir
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - matin
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.interrupteur_generale_ecole
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - soir
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.interrupteur_generale_ecole
+        data: {}
+  mode: single

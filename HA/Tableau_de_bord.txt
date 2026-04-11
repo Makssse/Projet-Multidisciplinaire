@@ -1,0 +1,261 @@
+views:
+  - type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.co2_salle_1
+                unit: ppm
+                needle: true
+                severity:
+                  green: -5
+                  yellow: 800
+                  red: 1400
+              - graph: line
+                type: sensor
+                entity: sensor.co2_salle_1
+                detail: 1
+                unit: ppm
+                hours_to_show: 8
+              - type: tile
+                entity: sensor.co2_salle_1
+                vertical: false
+                features_position: bottom
+              - chart_type: line
+                period: day
+                type: statistics-graph
+                entities:
+                  - sensor.co2_salle_1
+                stat_types:
+                  - mean
+                  - min
+                  - max
+            title: CO2 salle 1
+          - type: vertical-stack
+            cards:
+              - type: entities
+                title: Analyse de l'Air (ICONE)
+                entities:
+                  - entity: input_number.duree_icone_salle1
+              - type: gauge
+                name: ICONE sur la période
+                min: 0
+                max: 5
+                needle: true
+                segments:
+                  - from: 0
+                    color: '#4CAF50'
+                  - from: 2
+                    color: '#FF9800'
+                  - from: 4
+                    color: '#F44336'
+                entity: sensor.indice_icone_salle1
+          - type: entities
+            entities:
+              - entity: input_number.valeur_calibration_salle1
+              - entity: script.envoyer_calibration_salle1
+            title: Calibration CO2 forcé
+            show_header_toggle: false
+            state_color: true
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.temperature_salle_1
+              - graph: line
+                type: sensor
+                entity: sensor.temperature_salle_1
+                detail: 1
+              - type: tile
+                entity: sensor.temperature_salle_1
+                vertical: false
+                features_position: bottom
+              - chart_type: line
+                period: day
+                type: statistics-graph
+                entities:
+                  - sensor.temperature_salle_1
+                stat_types:
+                  - mean
+                  - min
+                  - max
+            title: Température salle 1
+          - type: entities
+            entities:
+              - entity: input_number.offset_temperature_salle1
+              - entity: script.envoyer_offset_salle1
+            title: Calibration température forcé
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.humidite_salle_1
+                unit: '%'
+              - graph: line
+                type: sensor
+                entity: sensor.humidite_salle_1
+                detail: 1
+                unit: '%'
+              - type: tile
+                entity: sensor.humidite_salle_1
+                vertical: false
+                features_position: bottom
+              - chart_type: line
+                period: day
+                type: statistics-graph
+                entities:
+                  - sensor.humidite_salle_1
+                stat_types:
+                  - mean
+                  - min
+                  - max
+            title: Humidité salle 1
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.bruit_salle_1
+                unit: pts
+              - graph: line
+                type: sensor
+                detail: 1
+                entity: sensor.bruit_salle_1
+              - type: tile
+                entity: sensor.bruit_salle_1
+                vertical: false
+                features_position: bottom
+              - chart_type: line
+                period: day
+                type: statistics-graph
+                entities:
+                  - sensor.bruit_salle_1
+                stat_types:
+                  - mean
+                  - min
+                  - max
+            title: Bruit salle 1
+    max_columns: 5
+    title: salle 1
+    cards: []
+    header:
+      card:
+        type: markdown
+        content: '# Salle 1'
+        text_only: true
+      layout: center
+      badges_position: bottom
+      badges_wrap: wrap
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: switch.activation_salle_1
+        name: Interrupteur salle 1
+        color: primary
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: switch.interrupteur_generale_ecole
+        name: Interrupteur générale ecole
+        color: primary
+        show_entity_picture: true
+  - type: sections
+    sections:
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.co2_salle_2
+                unit: ppm
+              - graph: line
+                type: sensor
+                entity: sensor.co2_salle_2
+                detail: 1
+                unit: ppm
+              - type: tile
+                entity: sensor.co2_salle_2
+                vertical: false
+                features_position: bottom
+              - type: statistics-graph
+                entities:
+                  - sensor.co2_salle_2
+            title: CO2 salle 2
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.bruit_salle_2
+                unit: pts
+              - graph: line
+                type: sensor
+                detail: 1
+                entity: sensor.bruit_salle_2
+              - type: tile
+                entity: sensor.bruit_salle_2
+                vertical: false
+                features_position: bottom
+            title: Bruit salle 2
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.humidite_salle_2
+                unit: '%'
+              - graph: line
+                type: sensor
+                entity: sensor.humidite_salle_2
+                detail: 1
+                unit: '%'
+              - type: tile
+                entity: sensor.humidite_salle_2
+                vertical: false
+                features_position: bottom
+            title: Humidité salle 2
+      - type: grid
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: gauge
+                entity: sensor.temperature_salle_2
+              - graph: line
+                type: sensor
+                entity: sensor.temperature_salle_2
+                detail: 1
+              - type: tile
+                entity: sensor.temperature_salle_2
+                vertical: false
+                features_position: bottom
+            title: Température salle 2
+    max_columns: 4
+    title: salle 2
+    cards: []
+    header:
+      card:
+        type: markdown
+        content: '# Salle 2'
+        text_only: true
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        show_entity_picture: true
+        name: Interrupteur salle 2
+        entity: switch.activation_salle_2
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: switch.interrupteur_generale_ecole
+        name:
+          type: entity
