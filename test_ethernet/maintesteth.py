@@ -4,10 +4,10 @@ import sys
 import time
 
 
-# On n'importe QUE la partie réseau/MQTT
+# On n'importe la partie réseau/MQTT
 from lib_mqtt import MQTTClient, connecter_ethernet
 
-# --- CONFIGURATION (Identique à votre réseau) ---
+# --- CONFIGURATION ---
 SALLE_ID = "salle1"
 IP_PICO = "10.40.1.22" # <--- Mettez l'IP de votre Pi pico ici
 BROKER_IP = "10.40.1.20" # <--- Mettez l'IP de votre Pi 4 ici
