@@ -11,4 +11,5 @@ Vous pouvez y trouver :
     - les autres code qui nous ont été utile dans le dossier "autre code"
 - le dossier initialisation RP Pico qui contient le fichier d'initialisation de la Pi Pico. Vous trouverez le protocole dans le guide d'utilisation.
 - le dossier "impression 3D" ou vous trouverez tous les fichiers nécessaire à l'impression de la coque 3D dans un fablab, les fichiers à imprimés étant dans le dossier "fichiers pour impression" : "LOUTRE_CREUSEE_VF" et  "LOUTRE_VENTRE_VF".
+- le dossier "rendus INSA" avec touts les documents que nous avons du produire et rendre pour lors de ce projet à nos enseignant.es. 
   
