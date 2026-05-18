@@ -5,6 +5,7 @@ from machine import Pin, SPI
 import usocket as socket
 import ustruct as struct
 import errno
+
 class MQTTClient:
     def __init__(self, client_id, broker, port, user, password, will_topic=None):
         self.client_id = client_id.encode()
@@ -42,28 +43,18 @@ class MQTTClient:
                 msg = f"Erreur inconnue (errno={e.errno}) : {e.strerror}"
 
             print(f"Erreur de connexion : {msg}")
-            # Optionnel : nettoyage ou nouvelle tentative
+            # Nettoyage ou nouvelle tentative de connexion
             self.sock.close()
         flags = 0xC6 if self.will_topic else 0xC2
-        
         payload = b'\x00\x04MQTT\x04' + bytes([flags]) + b'\x00\x3c'
-        
         payload += self._encode_str(self.client_id)
-        
-        if self.will_topic:
-            
+        if self.will_topic: 
             payload += self._encode_str(self.will_topic)
-            
-            payload += self._encode_str(b"offline")
-            
+            payload += self._encode_str(b"offline")   
         payload += self._encode_str(self.user)
-        
         payload += self._encode_str(self.password)
-        
         self.sock.write(b'\x10' + bytes([len(payload)]) + payload)
-        
         rep = self.sock.read(4)
-        
         return rep and rep[3] == 0
         #    except:
           #  return False
@@ -79,7 +70,7 @@ class MQTTClient:
             self.sock = None
             return False
 
-    # --- NOUVELLES FONCTIONS POUR L'INTERRUPTEUR ---
+# --- NOUVELLES FONCTIONS POUR L'INTERRUPTEUR ---
 
     def set_callback(self, f):
         """ Définit la fonction à appeler lors d'un message """
@@ -95,20 +86,20 @@ class MQTTClient:
         """ Vérifie si un message est arrivé de manière précise """
         self.sock.setblocking(False)
         try:
-            # 1. On lit juste le premier octet (Type de paquet)
+            #  On lit juste le premier octet (Type de paquet)
             res = self.sock.read(1)
             if res:
                 # 0x30 est le code pour un message "PUBLISH"
                 if res[0] & 0xf0 == 0x30: 
-                    # 2. On lit la taille restante (1 octet pour les petits messages)
+                    # On lit la taille restante (1 octet pour les petits messages)
                     remaining_length = self.sock.read(1)[0]
-                    # 3. On lit tout le reste du paquet d'un coup
+                    # On lit tout le reste du paquet d'un coup
                     data = self.sock.read(remaining_length)
                     
-                    # 4. On extrait le topic (les 2 premiers octets indiquent sa taille)
+                    # On extrait le topic (les 2 premiers octets indiquent sa taille)
                     topic_len = struct.unpack("!H", data[:2])[0]
                     topic = data[2:2+topic_len].decode()
-                    # 5. Le reste est le message (payload)
+                    # Le reste est le message (payload)
                     msg = data[2+topic_len:].decode()
                     
                     if self.callback:

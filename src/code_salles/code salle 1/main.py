@@ -185,22 +185,22 @@ async def tache_leds_et_capteur(scd, strip, micro, wdt):
         await asyncio.sleep(0.1)
 
 async def tache_mqtt(mqtt, wdt):
-    # 1. On dit au client MQTT quelle fonction utiliser pour les messages reçus
+    # Indique client MQTT quelle fonction utiliser pour les messages reçus
     mqtt.set_callback(reception_message)
     while True:
         try:
             if mqtt.sock is None:
                 print(f"Connexion au Broker...")
                 if mqtt.connecter():
-                    # 2. TRÈS IMPORTANT : S'abonner au topic de l'interrupteur
+                    # S'abonne au topic de l'interrupteur (set_status)
                     mqtt.subscribe(f"ecole/{SALLE_ID}/set_status")
                     mqtt.publier(f"ecole/{SALLE_ID}/availability", "online", retain=True)
             
             if mqtt.sock:
-                # 3. On vérifie si Home Assistant a envoyé un message (ON ou OFF)
+                # Vérifie si Home Assistant a envoyé un message (ON ou OFF)
                 mqtt.check_msg()
                 
-                # 4. On n'envoie les stats que si le système est actif
+                # Envoie les stats que si le système est actif
                 if systeme_actif and donnees_actuelles["co2"] > 0:
                     payload = ujson.dumps(donnees_actuelles)
                     mqtt.publier(f"ecole/{SALLE_ID}/state", payload) #
@@ -217,10 +217,9 @@ async def main():
     global SEUIL_CO2_OK
     global SEUIL_CO2_ALERTE
     global scd
-    # 1. Matériel et Sécurité
     wdt = WDT(timeout=8000) # Si le code freeze plus de 8s, la Pico reboot
 
-    #init led
+    # init led
     strip = config_led(NUM_LEDS,PIN_DATA,PIN_CLOCK,BRIGHTNESS)
 
     # Init Son (Port A0 / ADC 26)
@@ -234,13 +233,13 @@ async def main():
     scd.start_periodic_measurement()
     print("Capteur SCD4x prêt !")
     
-    # 2. Réseau
+    # Init Réseau
     print(f"Initialisation Ethernet sur {IP_PICO}...")
     connecter_ethernet(IP_PICO, MAC_PICO)
     
-    # Création du client MQTT avec les bons paramètres de ton test
+    # Création du client MQTT avec les bons paramètres
     mqtt = MQTTClient(f"pico_{SALLE_ID}", BROKER_IP, 1883, MQTT_USER, MQTT_PASS, 
-                      will_topic=f"ecole/{SALLE_ID}/availability")
+                      will_topic=f"ecole/{SALLE_ID}/availability") #will_topic sert de testament de connexion
     
 # Set-up des seuils de CO2 par les dernieres valeurs de Home Assistant
     with open("ini.txt", "r", encoding="utf-8") as ini:
@@ -249,7 +248,7 @@ async def main():
         SEUIL_CO2_OK=int(seuils[0])
         SEUIL_CO2_ALERTE=int(seuils[1])
 
-    # 3. Lancement du moteur asynchrone
+    # Lancement du moteur asynchrone
     print(f"Système {SALLE_ID} opérationnel")
     await asyncio.gather(
         tache_leds_et_capteur(scd, strip, micro, wdt),
