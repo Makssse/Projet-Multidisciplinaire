@@ -10,10 +10,10 @@ def connect_ethernet():
     eth_reset.value(1) # On la rallume
     time.sleep(0.5)    # On attend qu'elle finisse de booter
 
-    # 2. Configuration SPI (On peut monter à 20MHz pour plus de perf)
+    # Configuration SPI (On peut monter à 20MHz pour plus de perf)
     spi = SPI(0, 20_000_000, mosi=Pin(19), miso=Pin(16), sck=Pin(18))
     
-    # 3. Initialisation du contrôleur WIZNET5K
+    # Initialisation du contrôleur WIZNET5K
     # CS=17, Reset=20 (géré manuellement au dessus), mais on le passe au driver
     nic = network.WIZNET5K(spi, Pin(17), Pin(20)) 
     

@@ -12,8 +12,6 @@ import uasyncio as asyncio
 import ujson
 import sys
 
-# 1. Dossier des librairies
-#sys.path.append('/src/code salle 1/lib')
 
 from lib_scd4x import *
 from lib_led import *
@@ -21,7 +19,7 @@ from lib_mqtt import *
 from lib_son import config_port_son, niveau_sonore
 from lib_IP_MAC import connect_ethernet
 
-SALLE_ID = "salle1" # A CHANGER SELON PICO c'est la seule ligne à changer avc IP_BROKR
+SALLE_ID = "salle2" # A CHANGER SELON PICO c'est la seule ligne à changer avc IP_BROKR
 
 #on récupère l'IP et l'adresse MAC de la pico 
 mac_pico, ip_pico = connect_ethernet()
@@ -34,12 +32,13 @@ systeme_actif = True  # Le système démarre "Allumé" par défaut
 # --- CONFIGURATION MQTT
 IP_PICO = ip_pico  
 MAC_PICO = mac_pico 
-BROKER_IP = "10.40.1.20" #a changer selon le réseau
-MQTT_USER = "reseau_co2"      # Minuscule comme dans ton test
-MQTT_PASS = "co2_saintpaul"  # Ton mot de passe qui fonctionne
-INTERVALLE_MQTT = 5         # Envoi toutes les 10 secondes sur HA pour commencer
-SEUIL_CO2_OK = 800.0         #seuil pour les ppm du CO2
-SEUIL_CO2_ALERTE = 1500.0
+BROKER_IP = "192.168.2.10" #a changer selon le réseau
+MQTT_USER = "ecolesaintpaulqai"      # Minuscule comme dans ton test
+MQTT_PASS = "MmeM011ier!"  # Ton mot de passe qui fonctionne
+INTERVALLE_MQTT = 10         # Envoi toutes les 10 secondes sur HA pour commencer
+SEUIL_CO2_OK = 1200.0         #seuil pour les ppm du CO2
+SEUIL_CO2_ALERTE = 2000.0
+SEUIL_BRUIT_ALERTE = 2000   # Ajuster selon la sensibilité (potentiomètre) du capteur Grove
 #CIBLE_CALIBRATION_CO2 = 400.0
 
 # CONFIGURATION MATERIEL PI PICO
@@ -51,7 +50,8 @@ PORT_SCD = 0
 NUM_LEDS = 6        # Nombre de LEDs sur ta bande
 PIN_DATA = 1        #green (data)
 PIN_CLOCK = 0       #blue (clock)
-BRIGHTNESS = 0.1    # Luminosité (0.1 à 1.0)
+BRIGHTNESS = 0.5    # Luminosité (0.1 à 1.0)
+
 #pour le capteur de son
 PIN_SON = 26
 
@@ -65,6 +65,8 @@ donnees_actuelles = {"co2": 0, "temp": 0, "humi": 0, "bruit": 0}
 def reception_message(topic, msg):
     """ Cette fonction s'exécute dès qu'un message MQTT arrive """
     global systeme_actif
+    global SEUIL_CO2_ALERTE
+    global SEUIL_CO2_OK
     # On s'assure que 'msg' est bien une chaîne de caractères propre
     if isinstance(msg, bytes):
         ordre = msg.decode().strip()
@@ -84,7 +86,7 @@ def reception_message(topic, msg):
         try:
             systeme_actif = False
             valeur = float(ordre.split(":")[1])
-            print(f"🌡️ Application du nouvel Offset : {valeur}°C")
+            print(f"Application du nouvel Offset : {valeur}°C")
             change_parametres(scd, valeur, ALTITUDE)
             systeme_actif = True
         except Exception as e:
@@ -94,12 +96,43 @@ def reception_message(topic, msg):
         try:
             systeme_actif = False
             valeur = int(float(ordre.split(":")[1]))
-            print(f"🌡️ calibration forcé à : {valeur}ppm")
+            print(f"Calibration forcé à : {valeur}ppm")
             recalibration(scd, valeur)
             systeme_actif = True
         except Exception as e:
             print("Erreur lors de la calibration:", e)
+    
+    elif ordre.startswith("ALERTE:"):
+        try:
+            systeme_actif = False
+            valeur = int(float(ordre.split(":")[1]))
+            print(f"Seuil alerte MAJ à : {valeur}ppm")
+            
+            SEUIL_CO2_OK = valeur
+            with open("ini.txt", "w", encoding="utf-8") as ini:
+                ini.write(f"{SEUIL_CO2_OK}\n")       
+                ini.write(f"{SEUIL_CO2_ALERTE}\n")
 
+            systeme_actif = True
+        except Exception as e:
+            print("Erreur lors de la MAJ du seuil alerte CO2:", e)
+    
+    elif ordre.startswith("ALARME:"):
+        try:
+            systeme_actif = False
+            valeur = int(float(ordre.split(":")[1]))
+            print(f"Seuil alarme MAJ à : {valeur}ppm")
+            
+            SEUIL_CO2_ALERTE = valeur
+
+            with open("ini.txt", "w", encoding="utf-8") as ini:
+                ini.write(f"{SEUIL_CO2_OK}\n")       
+                ini.write(f"{SEUIL_CO2_ALERTE}\n")
+
+            systeme_actif = True
+        except Exception as e:
+            print("Erreur lors de la MAJ du seuil alarme CO2:", e)
+    
 
 
 async def tache_leds_et_capteur(scd, strip, micro, wdt):
@@ -108,39 +141,66 @@ async def tache_leds_et_capteur(scd, strip, micro, wdt):
         
         if systeme_actif:
             try:
+                # 1. ÉCOUTE DU SON EN CONTINU (Très réactif)
+                bruit = niveau_sonore(micro)
+                donnees_actuelles["bruit"] = bruit
+
+                
+                # 2. LECTURE DU CO2 (Seulement quand il est prêt, environ toutes les 5s)
+                # obtenir_donnees() ne bloque pas le code grâce à capteur.data_ready !
                 mesure = obtenir_donnees(scd)
                 if mesure:
                     co2, temp, hum = mesure
                     donnees_actuelles["co2"] = co2
                     donnees_actuelles["temp"] = round(temp, 1)
                     donnees_actuelles["humi"] = round(hum, 1)
-                    donnees_actuelles["bruit"] = niveau_sonore(micro)
-                    indicateur_visuel(co2, strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE) 
+                    
+                    # On met à jour la couleur d'ambiance UNIQUEMENT s'il n'y a pas d'alerte bruit
+                    if bruit <= SEUIL_BRUIT_ALERTE:
+                        indicateur_visuel(co2, strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE) 
+                
+                # 3. GESTION DE L'ALERTE SONORE (Prioritaire)
+                if bruit > SEUIL_BRUIT_ALERTE:
+                    print(f"Alerte Bruit détectée ! Niveau: {bruit}")
+                    # On fait clignoter les LEDs 4 fois avec la couleur actuelle du CO2
+                    for _ in range(4): 
+                        if donnees_actuelles["co2"] > 0:
+                            indicateur_visuel(donnees_actuelles["co2"], strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE)
+                        await asyncio.sleep(0.1)
+                        
+                        piloter_led(0, strip) # Éteint
+                        await asyncio.sleep(0.1)
+                    
+                    # On restaure la couleur normale après le clignotement
+                    if donnees_actuelles["co2"] > 0:
+                        indicateur_visuel(donnees_actuelles["co2"], strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE)
+
             except Exception as e:
                 print("Erreur lecture capteur:", e)
         else:
-            # Si le système est éteint : on éteint physiquement les LEDs
+            # Si le système est éteint
             piloter_led(0, strip)
         
-        await asyncio.sleep(5)
+        # 4. PAUSE TRÈS COURTE (10 vérifications du son par seconde au lieu de 1 toutes les 5s)
+        await asyncio.sleep(0.1)
 
 async def tache_mqtt(mqtt, wdt):
-    # 1. On dit au client MQTT quelle fonction utiliser pour les messages reçus
+    # Indique client MQTT quelle fonction utiliser pour les messages reçus
     mqtt.set_callback(reception_message)
     while True:
         try:
             if mqtt.sock is None:
                 print(f"Connexion au Broker...")
                 if mqtt.connecter():
-                    # 2. TRÈS IMPORTANT : S'abonner au topic de l'interrupteur
+                    # S'abonne au topic de l'interrupteur (set_status)
                     mqtt.subscribe(f"ecole/{SALLE_ID}/set_status")
                     mqtt.publier(f"ecole/{SALLE_ID}/availability", "online", retain=True)
             
             if mqtt.sock:
-                # 3. On vérifie si Home Assistant a envoyé un message (ON ou OFF)
+                # Vérifie si Home Assistant a envoyé un message (ON ou OFF)
                 mqtt.check_msg()
                 
-                # 4. On n'envoie les stats que si le système est actif
+                # Envoie les stats que si le système est actif
                 if systeme_actif and donnees_actuelles["co2"] > 0:
                     payload = ujson.dumps(donnees_actuelles)
                     mqtt.publier(f"ecole/{SALLE_ID}/state", payload) #
@@ -154,11 +214,12 @@ async def tache_mqtt(mqtt, wdt):
             await asyncio.sleep(1)
 
 async def main():
+    global SEUIL_CO2_OK
+    global SEUIL_CO2_ALERTE
     global scd
-    # 1. Matériel et Sécurité
     wdt = WDT(timeout=8000) # Si le code freeze plus de 8s, la Pico reboot
 
-    #init led
+    # init led
     strip = config_led(NUM_LEDS,PIN_DATA,PIN_CLOCK,BRIGHTNESS)
 
     # Init Son (Port A0 / ADC 26)
@@ -172,15 +233,22 @@ async def main():
     scd.start_periodic_measurement()
     print("Capteur SCD4x prêt !")
     
-    # 2. Réseau
+    # Init Réseau
     print(f"Initialisation Ethernet sur {IP_PICO}...")
     connecter_ethernet(IP_PICO, MAC_PICO)
     
-    # Création du client MQTT avec les bons paramètres de ton test
+    # Création du client MQTT avec les bons paramètres
     mqtt = MQTTClient(f"pico_{SALLE_ID}", BROKER_IP, 1883, MQTT_USER, MQTT_PASS, 
-                      will_topic=f"ecole/{SALLE_ID}/availability")
+                      will_topic=f"ecole/{SALLE_ID}/availability") #will_topic sert de testament de connexion
+    
+# Set-up des seuils de CO2 par les dernieres valeurs de Home Assistant
+    with open("ini.txt", "r", encoding="utf-8") as ini:
+        seuils=ini.readlines() 
+        print(seuils)
+        SEUIL_CO2_OK=int(seuils[0])
+        SEUIL_CO2_ALERTE=int(seuils[1])
 
-    # 3. Lancement du moteur asynchrone
+    # Lancement du moteur asynchrone
     print(f"Système {SALLE_ID} opérationnel")
     await asyncio.gather(
         tache_leds_et_capteur(scd, strip, micro, wdt),
