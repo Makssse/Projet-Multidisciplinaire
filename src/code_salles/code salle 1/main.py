@@ -21,15 +21,15 @@ from lib_IP_MAC import connect_ethernet
 
 SALLE_ID = "salle1" # A CHANGER SELON PICO c'est la seule ligne à changer avc IP_BROKR
 
-#on récupère l'IP et l'adresse MAC de la pico 
+# on récupère l'IP et l'adresse MAC de la pico 
 mac_pico, ip_pico = connect_ethernet()
 print(f"mac = {mac_pico}")
 print(f"ip = {ip_pico}")
 
-# --- ÉTAT DU SYSTÈME
+# ------------------ ÉTAT DU SYSTÈME ------------------ #
 systeme_actif = True  # Le système démarre "Allumé" par défaut
 
-# --- CONFIGURATION MQTT
+# ------------------ CONFIGURATION MQTT ------------------ #
 IP_PICO = ip_pico  
 MAC_PICO = mac_pico 
 BROKER_IP = "192.168.2.10" #a changer selon le réseau
@@ -41,26 +41,29 @@ SEUIL_CO2_ALERTE = 2000.0
 SEUIL_BRUIT_ALERTE = 2000   # Ajuster selon la sensibilité (potentiomètre) du capteur Grove
 #CIBLE_CALIBRATION_CO2 = 400.0
 
-# CONFIGURATION MATERIEL PI PICO
-#pour le capteur scd sur I2C0 de la shield
+# ------------------ CONFIGURATION MATERIELLE PI PICO ------------------ #
+# pour le capteur scd sur I2C0 de la shield
 PIN_SDA = 8
 PIN_SCL = 9
 PORT_SCD = 0
+# altitude du capteur (à spécifier)
+ALTITUDE = 0
+
 #pour les leds, config qui fontionne pour branchement des LEDs sur UART0 ou 0,1,Vcc,GND
 NUM_LEDS = 6        # Nombre de LEDs sur ta bande
 PIN_DATA = 1        #green (data)
 PIN_CLOCK = 0       #blue (clock)
 BRIGHTNESS = 0.5    # Luminosité (0.1 à 1.0)
 
-#pour le capteur de son
+# pour le capteur de son
 PIN_SON = 26
 
-#altitude du capteur
-ALTITUDE = 0
 
 
-# Variables globales pour partager les données entre les tâches
+# Dictionnaire des variables globales pour partager les données entre les tâches
 donnees_actuelles = {"co2": 0, "temp": 0, "humi": 0, "bruit": 0}
+
+# ------------------ FONCTIONS MQTT ------------------ #
 
 def reception_message(topic, msg):
     """ Cette fonction s'exécute dès qu'un message MQTT arrive """
@@ -133,7 +136,7 @@ def reception_message(topic, msg):
         except Exception as e:
             print("Erreur lors de la MAJ du seuil alarme CO2:", e)
     
-
+# ------------------ FONCTIONS PRINCIPALES ------------------ #
 
 async def tache_leds_et_capteur(scd, strip, micro, wdt):
     while True:
@@ -141,13 +144,13 @@ async def tache_leds_et_capteur(scd, strip, micro, wdt):
         
         if systeme_actif:
             try:
-                # 1. ÉCOUTE DU SON EN CONTINU (Très réactif)
+                # Mesure du son 
                 bruit = niveau_sonore(micro)
                 donnees_actuelles["bruit"] = bruit
 
                 
-                # 2. LECTURE DU CO2 (Seulement quand il est prêt, environ toutes les 5s)
-                # obtenir_donnees() ne bloque pas le code grâce à capteur.data_ready !
+                # Lecture CO2/températurehumidité dans le dictionnaire
+                # obtenir_donnees() ne bloque pas le code grâce à capteur.data_ready
                 mesure = obtenir_donnees(scd)
                 if mesure:
                     co2, temp, hum = mesure
@@ -155,14 +158,14 @@ async def tache_leds_et_capteur(scd, strip, micro, wdt):
                     donnees_actuelles["temp"] = round(temp, 1)
                     donnees_actuelles["humi"] = round(hum, 1)
                     
-                    # On met à jour la couleur d'ambiance UNIQUEMENT s'il n'y a pas d'alerte bruit
+                    # MAJ de la couleur s'il n'y a pas de bruit
                     if bruit <= SEUIL_BRUIT_ALERTE:
                         indicateur_visuel(co2, strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE) 
                 
-                # 3. GESTION DE L'ALERTE SONORE (Prioritaire)
+                # Alerte sonore (découplé du CO2)
                 if bruit > SEUIL_BRUIT_ALERTE:
                     print(f"Alerte Bruit détectée ! Niveau: {bruit}")
-                    # On fait clignoter les LEDs 4 fois avec la couleur actuelle du CO2
+                    #  fait clignoter les LEDs 4 fois avec la couleur actuelle du CO2
                     for _ in range(4): 
                         if donnees_actuelles["co2"] > 0:
                             indicateur_visuel(donnees_actuelles["co2"], strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE)
@@ -171,7 +174,7 @@ async def tache_leds_et_capteur(scd, strip, micro, wdt):
                         piloter_led(0, strip) # Éteint
                         await asyncio.sleep(0.1)
                     
-                    # On restaure la couleur normale après le clignotement
+                    # retour à la couleur normale après clignotement
                     if donnees_actuelles["co2"] > 0:
                         indicateur_visuel(donnees_actuelles["co2"], strip, SEUIL_CO2_OK, SEUIL_CO2_ALERTE)
 
@@ -179,9 +182,7 @@ async def tache_leds_et_capteur(scd, strip, micro, wdt):
                 print("Erreur lecture capteur:", e)
         else:
             # Si le système est éteint
-            piloter_led(0, strip)
-        
-        # 4. PAUSE TRÈS COURTE (10 vérifications du son par seconde au lieu de 1 toutes les 5s)
+            piloter_led(0, strip) 
         await asyncio.sleep(0.1)
 
 async def tache_mqtt(mqtt, wdt):
@@ -213,6 +214,8 @@ async def tache_mqtt(mqtt, wdt):
             wdt.feed()
             await asyncio.sleep(1)
 
+
+# --------------------- MAIN --------------------- #
 async def main():
     global SEUIL_CO2_OK
     global SEUIL_CO2_ALERTE
